@@ -14,24 +14,4 @@
 	<context:annotation-config />
 	<context:component-scan
 		base-package="com.owenobyrne.bitcoinarbitrage com.owenobyrne.mtgox com.owenobyrne.bitcoincentral" />
-
-	<bean name="jobDispatcherJobDetail"
-		class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-		<property name="jobClass"
-			value="com.owenobyrne.bitcoinarbitrage.scheduler.CheckArbitragePossibilityJob" />
-		<property name="durability" value="true" />
-	</bean>
-
-	<bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
-		<property name="applicationContextSchedulerContextKey" value="applicationContext" />
-		<property name="triggers">
-			<list>
-				<bean class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
-					<property name="jobDetail" ref="jobDispatcherJobDetail" />
-					<property name="cronExpression" value="0 * * * * ?" />
-				</bean>
-			</list>
-		</property>
-	</bean>
-
 </beans>

@@ -42,8 +42,8 @@ public class TestResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public HashMap<String, String> respondAsReady() throws Exception {
 
-		Order o = mtgox.trade("bid", new BigDecimal(0.01).scaleByPowerOfTen(8).toBigInteger());
-		BitcoinCentralOrder bco = bitcoincentral.trade("sell", new BigDecimal(0.01).round(new MathContext(4)));
+		//Order o = mtgox.trade("bid", new BigDecimal(0.01).scaleByPowerOfTen(8).toBigInteger());
+		//BitcoinCentralOrder bco = bitcoincentral.trade("sell", new BigDecimal(0.01).round(new MathContext(4)));
 		
 		Info i = mtgox.getInfo();
 		Quote askq = mtgox.getQuote("ask");
@@ -62,11 +62,10 @@ public class TestResource {
 		hm.put("MtGox EUR Value", "" + btcBalance.multiply(askPrice));
 		hm.put("BC BTC Bid", "" + md.getBids()[0].getAmount());
 		hm.put("BC Bid Price", "" + md.getBids()[0].getPrice());
-		hm.put("BC Ask UUID", bco.getUuid());
-		hm.put("MtGox Bid Order ID", o.getData());
+		//hm.put("BC Ask UUID", bco.getUuid());
+		//hm.put("MtGox Bid Order ID", o.getData());
 		
 		return hm;
-		//"Order ID: " + o.getData() + " - remaining MtGox portfolio value = " + btcBalance + " BTC @ " + askPrice + " EUR: " + btcBalance.multiply(askPrice);
 		
 	}
 }
