@@ -28,7 +28,7 @@
 			<list>
 				<bean class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
 					<property name="jobDetail" ref="jobDispatcherJobDetail" />
-					<property name="cronExpression" value="0 * * * * ?" />
+					<property name="cronExpression" value="0/30 * * * * ?" />
 				</bean>
 			</list>
 		</property>

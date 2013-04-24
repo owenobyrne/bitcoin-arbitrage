@@ -36,7 +36,7 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-		
+
 		<!--Various Application Context utilities, including EhCache, JavaMail, 
 			Quartz, and Freemarker integration Define this if you need any of these integrations -->
 		<dependency>
@@ -153,6 +153,11 @@
 			<groupId>com.owenobyrne</groupId>
 			<artifactId>mtgox-api</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.xerial</groupId>
+			<artifactId>sqlite-jdbc</artifactId>
+			<version>3.6.16</version>
 		</dependency>
 	</dependencies>
 
