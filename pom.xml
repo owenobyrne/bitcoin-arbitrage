@@ -134,6 +134,12 @@
 			</exclusions>
 		</dependency>
 		<dependency>
+			<artifactId>servlet-api</artifactId>
+			<groupId>javax.servlet</groupId>
+			<version>2.5</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>com.netflix.astyanax</groupId>
 			<artifactId>astyanax</artifactId>
 			<version>1.56.26</version>
@@ -141,6 +147,14 @@
 				<exclusion>
 					<artifactId>antlr</artifactId>
 					<groupId>antlr</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>servlet-api</artifactId>
+					<groupId>javax.servlet</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>servlet-api</artifactId>
+					<groupId>org.mortbay.jetty</groupId>
 				</exclusion>
 			</exclusions>
 		</dependency>
