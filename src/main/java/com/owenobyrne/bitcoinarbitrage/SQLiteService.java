@@ -4,8 +4,10 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.annotation.PostConstruct;
@@ -13,6 +15,8 @@ import javax.annotation.PreDestroy;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Service;
+
+import com.owenobyrne.bitcoinarbitrage.model.Prices;
 
 
 @Service
@@ -47,7 +51,7 @@ public class SQLiteService {
 
 			// statement.executeUpdate("drop table if exists transactions");
 			statement
-				.executeUpdate("CREATE  TABLE  IF NOT EXISTS prices (id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp DATETIME NOT NULL  DEFAULT CURRENT_TIMESTAMP, mtGoxBidEUR NUMERIC, mtGoxAskEUR NUMERIC, bitcoinCentralBidEUR NUMERIC, bitcoinCentralAskEUR NUMERIC)");
+				.executeUpdate("CREATE  TABLE  IF NOT EXISTS prices (id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp DATETIME NOT NULL  DEFAULT CURRENT_TIMESTAMP, mtGoxBidEUR NUMERIC, mtGoxAskEUR NUMERIC, bitcoinCentralBidEUR NUMERIC, bitcoinCentralAskEUR NUMERIC, btceBidEUR NUMERIC, btceAskEUR NUMERIC)");
 			
 			//statement
 				//.executeUpdate("create table if not exists regular_transactions (id INTEGER PRIMARY KEY AUTOINCREMENT, account string, narrative string, amount string, isdr integer, cron string, next_date tdate)");
@@ -67,7 +71,7 @@ public class SQLiteService {
 		PreparedStatement insertTransaction = null;
 
 		String insertString = "insert into prices " + 
-			"(mtGoxBidEUR, mtGoxAskEUR, bitcoinCentralBidEUR, bitcoinCentralAskEUR)" + 
+			"(mtGoxBidEUR, mtGoxAskEUR, btceBidEUR, btceAskEUR)" + 
 			" values " + 
 			"(?, ?, ?, ?)";
 
@@ -75,8 +79,8 @@ public class SQLiteService {
 			insertTransaction = connection.prepareStatement(insertString);
 			insertTransaction.setFloat(1, prices.get("mtGoxBidEUR").floatValue());
 			insertTransaction.setFloat(2, prices.get("mtGoxAskEUR").floatValue());
-			insertTransaction.setFloat(3, prices.get("bitcoinCentralBidEUR").floatValue());
-			insertTransaction.setFloat(4, prices.get("bitcoinCentralAskEUR").floatValue());
+			insertTransaction.setFloat(3, prices.get("btceBidEUR").floatValue());
+			insertTransaction.setFloat(4, prices.get("btceAskEUR").floatValue());
 			insertTransaction.executeUpdate();
 
 		} catch (SQLException e) {
@@ -143,31 +147,53 @@ public class SQLiteService {
 		}
 		return matchedTransactions;
 	}
-	public Transaction getTransactionById(int id) {
-		String SQL = "select * from transactions where id = ?";
-
+	*/
+	
+	public ArrayList<Prices> getPrices() {
+		String SQL = "select * from prices order by id desc limit 0,20";
+		ArrayList<Prices> prices = new ArrayList<Prices>();
+		
 		try {
 			PreparedStatement preparedStatement = connection
 					.prepareStatement(SQL);
-			preparedStatement.setInt(1, id);
+			//preparedStatement.setInt(1, id);
+			
+			ResultSet rs = preparedStatement.executeQuery();
+			while (rs.next()) {
+				prices.add(new Prices()
+					.setMtGoxBidEUR(new BigDecimal(rs.getFloat("mtGoxBidEUR")))
+					.setMtGoxAskEUR(new BigDecimal(rs.getFloat("mtGoxAskEUR")))
+					.setBtceBidEUR(new BigDecimal(rs.getFloat("btceBidEUR")))
+					.setBtceAskEUR(new BigDecimal(rs.getFloat("btceAskEUR")))
+				);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return prices;
+	}
+
+	public Prices getLastPrices() {
+		String SQL = "select * from prices order by id desc limit 0,1";
+		
+		try {
+			PreparedStatement preparedStatement = connection
+					.prepareStatement(SQL);
+			//preparedStatement.setInt(1, id);
 			
 			ResultSet rs = preparedStatement.executeQuery();
 			if (rs.next()) {
-				return new Transaction()
-						.setId(rs.getInt("id"))
-						.setNarrative(rs.getString("narrative"))
-						.setAmount(rs.getString("amount"))
-						.setIsDR(rs.getBoolean("isdr"))
-						.setAccount(rs.getString("account"))
-						.setTransDate(rs.getLong("tdate"));
-			} else {
-				log.debug("No such transaction");
-				return null;
+				return new Prices()
+					.setMtGoxBidEUR(new BigDecimal(rs.getFloat("mtGoxBidEUR")))
+					.setMtGoxAskEUR(new BigDecimal(rs.getFloat("mtGoxAskEUR")))
+					.setBtceBidEUR(new BigDecimal(rs.getFloat("btceBidEUR")))
+					.setBtceAskEUR(new BigDecimal(rs.getFloat("btceAskEUR")))
+				;
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 		return null;
 	}
-*/
+
 }

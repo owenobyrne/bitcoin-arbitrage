@@ -32,8 +32,8 @@ response.setHeader("Expires","0");
        		Searching...
        	</div>
 		
-        <script id="template" type="text/x-jquery-tmpl">
-			\${date} - \${id}
+        <script id="template" type="text/x-jquery-tmpl">			
+			\${mtGoxBidEUR} - \${mtGoxAskEUR} - \${btceBidEUR} - \${btceAskEUR}
 			<br/>
         </script>
 
@@ -93,11 +93,9 @@ response.setHeader("Expires","0");
 	
 	                            var visible = $('#placeHolder').is(':visible');
 	
-	                            if (result.length > 0 && visible) {
-	                                $("#placeHolder").fadeOut();
-	                            }
+	                            
 
-	                            $( "#template" ).tmpl( result ).hide().prependTo( "#placeHolder").fadeIn();
+	                            $( "#template" ).tmpl( result ).prependTo( "#placeHolder");
 	
 	                        } catch (error) {
 	                            asyncHttpStatistics.numberOfErrors++;

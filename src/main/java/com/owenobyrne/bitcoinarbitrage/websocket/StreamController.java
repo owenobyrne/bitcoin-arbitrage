@@ -1,7 +1,6 @@
 package com.owenobyrne.bitcoinarbitrage.websocket;
 
-import java.util.Date;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -13,9 +12,13 @@ import org.atmosphere.cpr.Broadcaster;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.owenobyrne.bitcoinarbitrage.SQLiteService;
+import com.owenobyrne.bitcoinarbitrage.model.Prices;
 
 /**
  * Handles requests for the application home page.
@@ -26,7 +29,8 @@ public class StreamController {
 	private static final Logger logger = LoggerFactory
 			.getLogger(StreamController.class);
 
-	private long sinceId = 0;
+	@Autowired
+	SQLiteService sqlite;
 
 	private void suspend(final AtmosphereResource resource) {
 		final CountDownLatch countDownLatch = new CountDownLatch(1);
@@ -60,16 +64,12 @@ public class StreamController {
 
 			// @Override
 			public String call() throws Exception {
-
-				HashMap<String, String> h = new HashMap<String, String>();
-				h.put("date", new Date().toString());
-				h.put("id",  "" + sinceId);
-				sinceId++;
-				
-				return mapper.writeValueAsString(h);
+				//ArrayList<Prices> prices = sqlite.getPrices();	
+				Prices p = sqlite.getLastPrices();
+				return mapper.writeValueAsString(p);
 			}
 
-		}, 3, TimeUnit.SECONDS);
+		}, 5, TimeUnit.SECONDS);
 	}
 
 }

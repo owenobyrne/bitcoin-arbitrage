@@ -13,7 +13,7 @@
 
 	<context:annotation-config />
 	<context:component-scan
-		base-package="com.owenobyrne.bitcoinarbitrage com.owenobyrne.mtgox com.owenobyrne.bitcoincentral" />
+		base-package="com.owenobyrne.bitcoinarbitrage com.owenobyrne.mtgox com.owenobyrne.bitcoincentral com.owenobyrne.btce" />
 
 	<bean name="jobDispatcherJobDetail"
 		class="org.springframework.scheduling.quartz.JobDetailFactoryBean">

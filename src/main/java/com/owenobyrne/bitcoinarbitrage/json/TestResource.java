@@ -1,7 +1,6 @@
 package com.owenobyrne.bitcoinarbitrage.json;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.util.HashMap;
 
 import javax.ws.rs.GET;
@@ -15,12 +14,10 @@ import javax.ws.rs.core.UriInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.owenobyrne.bitcoincentral.BitcoinCentral;
-import com.owenobyrne.bitcoincentral.api.model.BitcoinCentralOrder;
-import com.owenobyrne.bitcoincentral.api.model.MarketDepth;
+import com.owenobyrne.btce.BTCE;
+import com.owenobyrne.btce.api.model.Depth;
 import com.owenobyrne.mtgox.MtGox;
 import com.owenobyrne.mtgox.api.model.Info;
-import com.owenobyrne.mtgox.api.model.Order;
 import com.owenobyrne.mtgox.api.model.Quote;
 
 @Path("/test1")
@@ -36,7 +33,8 @@ public class TestResource {
 	MtGox mtgox;
 	
 	@Autowired
-	BitcoinCentral bitcoincentral;
+	BTCE btce;
+	//BitcoinCentral bitcoincentral;
 	
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
@@ -48,7 +46,9 @@ public class TestResource {
 		Info i = mtgox.getInfo();
 		Quote askq = mtgox.getQuote("ask");
 		
-		MarketDepth md = bitcoincentral.getMarketDepth();
+		//MarketDepth md = bitcoincentral.getMarketDepth();
+		
+		Depth md = btce.getMarketDepth("btc_eur");
 		
 		BigDecimal btcBalance = 
 				(i.getData().getWallets().get("BTC").getBalance().getValue_int())
@@ -60,8 +60,10 @@ public class TestResource {
 		hm.put("MtGox BTC", "" + btcBalance);
 		hm.put("MtGox Ask Price", "" + askPrice);
 		hm.put("MtGox EUR Value", "" + btcBalance.multiply(askPrice));
-		hm.put("BC BTC Bid", "" + md.getBids()[0].getAmount());
-		hm.put("BC Bid Price", "" + md.getBids()[0].getPrice());
+		//hm.put("BC BTC Bid", "" + md.getBids()[0].getAmount());
+		//hm.put("BC Bid Price", "" + md.getBids()[0].getPrice());
+		hm.put("BTCe BTC Bid", "" + md.getBids().get(0).get(0));
+		hm.put("BTCe Bid Price", "" + md.getBids().get(0).get(1));
 		//hm.put("BC Ask UUID", bco.getUuid());
 		//hm.put("MtGox Bid Order ID", o.getData());
 		

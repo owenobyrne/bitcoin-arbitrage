@@ -9,17 +9,15 @@ import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.mchange.v2.sql.SqlUtils;
 import com.owenobyrne.bitcoincentral.BitcoinCentral;
-import com.owenobyrne.bitcoincentral.BitcoinCentralException;
-import com.owenobyrne.bitcoincentral.api.model.Balances;
-import com.owenobyrne.bitcoincentral.api.model.BitcoinCentralTrade;
-import com.owenobyrne.bitcoincentral.api.model.MarketDepth;
+import com.owenobyrne.btce.BTCE;
+import com.owenobyrne.btce.BTCEException;
+import com.owenobyrne.btce.api.model.BTCEInfo;
+import com.owenobyrne.btce.api.model.Depth;
 import com.owenobyrne.mtgox.MtGox;
 import com.owenobyrne.mtgox.MtGoxException;
 import com.owenobyrne.mtgox.api.model.Info;
 import com.owenobyrne.mtgox.api.model.Quote;
-import com.owenobyrne.mtgox.api.model.TradeResult;
 
 @Component
 public class Arbitrator {
@@ -27,6 +25,8 @@ public class Arbitrator {
 	BigDecimal mtGoxCommissionRate = new BigDecimal(0.006, new MathContext(3));
 	BigDecimal bitcoinCentralCommissionRate = new BigDecimal(0.00498,
 			new MathContext(5));
+	BigDecimal btceCommissionRate = new BigDecimal(0.002,
+			new MathContext(3));
 
 	@Autowired
 	SQLiteService sqlite;
@@ -37,21 +37,28 @@ public class Arbitrator {
 	@Autowired
 	BitcoinCentral bitcoincentral;
 
+	@Autowired
+	BTCE btce;
+
 	public void checkArbitragePossibility() {
 		logger.info("checking...");
 		
 		BigDecimal totalCommission = mtGoxCommissionRate
-				.add(bitcoinCentralCommissionRate);
+				.add(btceCommissionRate);
 		
 		BigDecimal mtGoxBTCBalance = new BigDecimal(0);
 		BigDecimal mtGoxEURBalance = new BigDecimal(0);
-		BigDecimal bitcoinCentralBTCBalance = new BigDecimal(0);
-		BigDecimal bitcoinCentralEURBalance = new BigDecimal(0);
+		//BigDecimal bitcoinCentralBTCBalance = new BigDecimal(0);
+		//BigDecimal bitcoinCentralEURBalance = new BigDecimal(0);
+		BigDecimal btceBTCBalance = new BigDecimal(0);
+		BigDecimal btceEURBalance = new BigDecimal(0);
 		
-		BigDecimal bitcoinCentralBidEUR = new BigDecimal(0);
-		BigDecimal bitcoinCentralAskEUR = new BigDecimal(0);
 		BigDecimal mtGoxAskEUR = new BigDecimal(0);
 		BigDecimal mtGoxBidEUR = new BigDecimal(0);
+		//BigDecimal bitcoinCentralBidEUR = new BigDecimal(0);
+		//BigDecimal bitcoinCentralAskEUR = new BigDecimal(0);
+		BigDecimal btceBidEUR = new BigDecimal(0);
+		BigDecimal btceAskEUR = new BigDecimal(0);
 		
 		Info mtGoxInfo = null;
 
@@ -83,7 +90,8 @@ public class Arbitrator {
 			e.printStackTrace();
 			//continue anyway
 		}
-			
+		
+		/*
 		Balances bitcoinCentralBalances = null;
 		try {
 			bitcoinCentralBalances = bitcoincentral.getBalances();
@@ -105,32 +113,62 @@ public class Arbitrator {
 			e.printStackTrace();
 			//continue
 		}
+*/
+		BTCEInfo btceBalances = null;
+		try {
+			btceBalances = btce.getInfo();
+		
+			btceBTCBalance = btceBalances.getReturn().getFunds().get("btc");
+			btceEURBalance = btceBalances.getReturn().getFunds().get("eur");
+		
+		} catch (BTCEException e) {
+			e.printStackTrace();
+		}
+
+		Depth btceMarketDepth = null;
+		try {
+			btceMarketDepth = btce.getMarketDepth("btc_eur");
+			btceBidEUR = btceMarketDepth.getBids().get(0).get(0);
+			btceAskEUR = btceMarketDepth.getAsks().get(0).get(0);
+		
+		} catch (BTCEException e) {
+			e.printStackTrace();
+			//continue
+		}
 		
 		HashMap<String, BigDecimal> prices = new HashMap<String, BigDecimal>();
 		prices.put("mtGoxAskEUR", mtGoxAskEUR);
 		prices.put("mtGoxBidEUR", mtGoxBidEUR);
-		prices.put("bitcoinCentralBidEUR", bitcoinCentralBidEUR);
-		prices.put("bitcoinCentralAskEUR", bitcoinCentralAskEUR);
+		//prices.put("bitcoinCentralBidEUR", bitcoinCentralBidEUR);
+		//prices.put("bitcoinCentralAskEUR", bitcoinCentralAskEUR);
+		prices.put("btceBidEUR", btceBidEUR);
+		prices.put("btceAskEUR", btceAskEUR);
 		sqlite.addNewPriceRecord(prices);
 
+		/*
 		BigDecimal mtGox2BitcoinCentralDifference = bitcoinCentralBidEUR
 				.subtract(mtGoxAskEUR);
 		BigDecimal bitcoinCentral2MtGoxDifference = mtGoxBidEUR
 				.subtract(bitcoinCentralAskEUR);
+*/
+		BigDecimal mtGox2BtceDifference = btceBidEUR
+				.subtract(mtGoxAskEUR);
+		BigDecimal btce2MtGoxDifference = mtGoxBidEUR
+				.subtract(btceAskEUR);
 
 		BigDecimal amountOfBTCToTrade = new BigDecimal(0.01);
 
-		if (mtGox2BitcoinCentralDifference.divide(mtGoxAskEUR,
+		if (mtGox2BtceDifference.divide(mtGoxAskEUR,
 				RoundingMode.HALF_UP).compareTo(totalCommission) > 0) {
-			logger.info("MtGox -> BitcoinCentral Difference is greater than "
+			logger.info("MtGox -> BTCe Difference is greater than "
 					+ totalCommission
 					+ "! "
-					+ mtGox2BitcoinCentralDifference.divide(mtGoxAskEUR,
+					+ mtGox2BtceDifference.divide(mtGoxAskEUR,
 							RoundingMode.HALF_UP));
 
 			if (mtGoxEURBalance.compareTo(amountOfBTCToTrade
 					.multiply(mtGoxBidEUR)) > 0
-					&& bitcoinCentralBTCBalance
+					&& btceBTCBalance
 							.compareTo(amountOfBTCToTrade) > 0) {
 				// Order mtGoxOrder = mtgox.trade("bid",
 				// amountOfBTCToTrade.scaleByPowerOfTen(8).toBigInteger());
@@ -138,27 +176,27 @@ public class Arbitrator {
 				// bitcoincentral.trade("sell", amountOfBTCToTrade.round(new
 				// MathContext(4)));
 			} else {
-				logger.info("MtGox -> BitcoinCentral Insufficent funds to trade.");
+				logger.info("MtGox -> BTCe Insufficent funds to trade.");
 
 			}
 		} else {
-			logger.info("MtGox -> BitcoinCentral Difference is less than "
+			logger.info("MtGox -> BTCe Difference is less than "
 					+ totalCommission
 					+ "! "
-					+ mtGox2BitcoinCentralDifference.divide(mtGoxAskEUR,
+					+ mtGox2BtceDifference.divide(mtGoxAskEUR,
 							RoundingMode.HALF_UP));
 		}
 
-		if (bitcoinCentral2MtGoxDifference.divide(bitcoinCentralAskEUR,
+		if (btce2MtGoxDifference.divide(btceAskEUR,
 				RoundingMode.HALF_UP).compareTo(totalCommission) > 0) {
 			logger.info("BitcoinCentral -> MtGox Difference is greater than "
 					+ totalCommission
 					+ "! "
-					+ bitcoinCentral2MtGoxDifference.divide(mtGoxAskEUR,
+					+ btce2MtGoxDifference.divide(mtGoxAskEUR,
 							RoundingMode.HALF_UP));
 
-			if (bitcoinCentralEURBalance.compareTo(amountOfBTCToTrade
-					.multiply(bitcoinCentralBidEUR)) > 0
+			if (btceEURBalance.compareTo(amountOfBTCToTrade
+					.multiply(btceBidEUR)) > 0
 					&& mtGoxBTCBalance.compareTo(amountOfBTCToTrade) > 0) {
 				// BitcoinCentralOrder bitcoinCentralOrder =
 				// bitcoincentral.trade("buy", amountOfBTCToTrade.round(new
@@ -166,15 +204,15 @@ public class Arbitrator {
 				// Order mtGoxOrder = mtgox.trade("ask",
 				// amountOfBTCToTrade.scaleByPowerOfTen(8).toBigInteger());
 			} else {
-				logger.info("BitcoinCentral -> MtGox Insufficent funds to trade.");
+				logger.info("BTCe -> MtGox Insufficent funds to trade.");
 
 			}
 
 		} else {
-			logger.info("BitcoinCentral -> MtGox Difference is less than "
+			logger.info("BTCe -> MtGox Difference is less than "
 					+ totalCommission
 					+ "! "
-					+ bitcoinCentral2MtGoxDifference.divide(mtGoxAskEUR,
+					+ btce2MtGoxDifference.divide(mtGoxAskEUR,
 							RoundingMode.HALF_UP));
 
 		}
