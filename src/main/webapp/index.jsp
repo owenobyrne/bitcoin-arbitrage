@@ -58,7 +58,7 @@ response.setHeader("Expires","0");
                 request.transport = transport;
                 request.url = "<c:url value='/feeds/howya'/>";
                 request.contentType = "application/json";
-                request.fallbackTransport = null;
+                request.fallbackTransport = 'long-polling';
                 
                 request.onMessage = function(response){
                     buildTemplate(response);

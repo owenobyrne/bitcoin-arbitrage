@@ -1,11 +1,16 @@
 package com.owenobyrne.bitcoinarbitrage;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
+import org.atmosphere.cpr.BroadcasterFactory;
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -48,10 +53,12 @@ public class Arbitrator {
 		
 		BigDecimal mtGoxBTCBalance = new BigDecimal(0);
 		BigDecimal mtGoxEURBalance = new BigDecimal(0);
+		BigDecimal mtGoxUSDBalance = new BigDecimal(0);
 		//BigDecimal bitcoinCentralBTCBalance = new BigDecimal(0);
 		//BigDecimal bitcoinCentralEURBalance = new BigDecimal(0);
 		BigDecimal btceBTCBalance = new BigDecimal(0);
 		BigDecimal btceEURBalance = new BigDecimal(0);
+		BigDecimal btceUSDBalance = new BigDecimal(0);
 		
 		BigDecimal mtGoxAskEUR = new BigDecimal(0);
 		BigDecimal mtGoxBidEUR = new BigDecimal(0);
@@ -68,8 +75,10 @@ public class Arbitrator {
 			mtGoxBTCBalance = mtGoxInfo.getData().getWallets()
 				.get("BTC").getBalance().getValue();
 			mtGoxEURBalance = mtGoxInfo.getData().getWallets()
-				.get("EUR").getBalance().getValue();
-			
+					.get("EUR").getBalance().getValue();
+			mtGoxUSDBalance = mtGoxInfo.getData().getWallets()
+					.get("USD").getBalance().getValue();
+				
 		} catch (MtGoxException e) {
 			e.printStackTrace();
 			
@@ -120,6 +129,7 @@ public class Arbitrator {
 		
 			btceBTCBalance = btceBalances.getReturn().getFunds().get("btc");
 			btceEURBalance = btceBalances.getReturn().getFunds().get("eur");
+			btceUSDBalance = btceBalances.getReturn().getFunds().get("usd");
 		
 		} catch (BTCEException e) {
 			e.printStackTrace();
@@ -144,6 +154,21 @@ public class Arbitrator {
 		prices.put("btceBidEUR", btceBidEUR);
 		prices.put("btceAskEUR", btceAskEUR);
 		sqlite.addNewPriceRecord(prices);
+		
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			BroadcasterFactory.getDefault().lookup("/feeds/howya", true).broadcast(mapper.writeValueAsString(sqlite.getLastPrices()));
+		} catch (JsonGenerationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (JsonMappingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 
 		/*
 		BigDecimal mtGox2BitcoinCentralDifference = bitcoinCentralBidEUR
@@ -189,7 +214,7 @@ public class Arbitrator {
 
 		if (btce2MtGoxDifference.divide(btceAskEUR,
 				RoundingMode.HALF_UP).compareTo(totalCommission) > 0) {
-			logger.info("BitcoinCentral -> MtGox Difference is greater than "
+			logger.info("BTCe -> MtGox Difference is greater than "
 					+ totalCommission
 					+ "! "
 					+ btce2MtGoxDifference.divide(mtGoxAskEUR,
